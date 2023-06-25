@@ -2,6 +2,8 @@ import { Navigate, useParams } from "react-router";
 import React from "react";
 import { HlsPlayer, MediaSelection } from "./HlsPlayer";
 import { HttpClient } from "../../../const";
+import { Progress } from "@rewynd.io/rewynd-client-typescript";
+import { resetCompletedProgress } from "../../../util";
 
 export function MovieHlsPlayer() {
   const { movieId } = useParams();
@@ -14,7 +16,9 @@ export function MovieHlsPlayer() {
       onInit={async () => {
         const [movie, prog] = await Promise.all([
           HttpClient.getMovie({ movieId: movieId }),
-          HttpClient.getUserProgress({ id: movieId }).then((it) => it.percent),
+          HttpClient.getUserProgress({ id: movieId }).then(
+            (it: Progress) => resetCompletedProgress(it)?.percent
+          ),
         ]);
         if (movie) {
           return {

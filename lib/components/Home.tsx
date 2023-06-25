@@ -27,6 +27,7 @@ const log = WebLog.getChildCategory("Home");
 export function Home() {
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [episodes, setEpisodes] = useState<ProgressedEpisodeInfo[]>([]);
+  const [nextEpisodes, setNextEpisodes] = useState<ProgressedEpisodeInfo[]>([]);
 
   useEffect(() => {
     HttpClient.listLibraries().then((it) => setLibraries(it));
@@ -53,6 +54,46 @@ export function Home() {
       })
       .then((it) =>
         setEpisodes(
+          List(it)
+            .filter(isNotNil)
+            .sortBy((a) => a.progress)
+            .reverse()
+            .toArray()
+        )
+      );
+    HttpClient.listProgress({
+      listProgressRequest: {
+        minPercent: 0.95,
+        limit: 20,
+      },
+    })
+      .then(async (it) => {
+        const results = it.results;
+        return (
+          await Promise.all(
+            results?.map(async (prog) => {
+              try {
+                const res = await HttpClient.getNextEpisode({
+                  episodeId: prog.id,
+                });
+                const resProgress = await HttpClient.getUserProgress({
+                  id: res.id,
+                });
+                if (resProgress.percent <= 0.05) {
+                  return { progress: resProgress, episode: res };
+                } else {
+                  return undefined;
+                }
+              } catch (e) {
+                log.error("Failed to load episode", e);
+                return undefined;
+              }
+            }) ?? []
+          )
+        )?.filter((it) => isNotNil(it));
+      })
+      .then((it) =>
+        setNextEpisodes(
           List(it)
             .filter(isNotNil)
             .sortBy((a) => a.progress)
@@ -110,6 +151,20 @@ export function Home() {
           width={"100%"}
         >
           {episodes.map((episode) => (
+            <EpisodeCard {...episode} key={episode.episode.id} />
+          ))}
+        </Grid>
+        <Grid
+          container
+          item
+          direction={"row"}
+          justifyContent={"flex-start"}
+          wrap={"nowrap"}
+          sx={{ overflowX: "scroll" }}
+          minHeight={"15em"}
+          width={"100%"}
+        >
+          {nextEpisodes.map((episode) => (
             <EpisodeCard {...episode} key={episode.episode.id} />
           ))}
         </Grid>

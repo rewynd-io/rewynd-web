@@ -2,6 +2,7 @@ import {
   EpisodeInfo,
   MediaInfo,
   MovieInfo,
+  Progress,
 } from "@rewynd.io/rewynd-client-typescript";
 import {
   instanceOfEpisodeInfo,
@@ -72,4 +73,10 @@ function isEpisodeInfo(obj: unknown): obj is EpisodeInfo {
 }
 function isMovieInfo(obj: unknown): obj is MovieInfo {
   return !!obj && typeof obj === "object" && instanceOfMovieInfo(obj);
+}
+
+export function resetCompletedProgress(progress: Progress): Progress {
+  return progress.percent <= 0.99
+    ? progress
+    : { id: progress.id, percent: 0, timestamp: Date.now() };
 }

@@ -16,6 +16,7 @@ import { HttpClient } from "../../../const";
 import { WebRoutes } from "../../../routes";
 import formatEpisodeRoute = WebRoutes.Player.formatEpisodeRoute;
 import { useUser } from "../../../store/slice/UserSlice";
+import { resetCompletedProgress } from "../../../util";
 
 export function EpisodeHlsPlayer() {
   const { episodeId } = useParams();
@@ -63,7 +64,7 @@ export function EpisodeHlsPlayer() {
       const [perc, nextNext]: [number | undefined, string | undefined] =
         await Promise.all([
           HttpClient.getUserProgress({ id: next.id }).then(
-            (it: Progress) => it?.percent
+            (it: Progress) => resetCompletedProgress(it)?.percent
           ),
           HttpClient.getNextEpisode({ episodeId: next.id }).then(
             (it: EpisodeInfo) => it.id
@@ -106,7 +107,7 @@ export function EpisodeHlsPlayer() {
         ] = await Promise.all([
           HttpClient.getEpisode({ episodeId: episodeId }),
           HttpClient.getUserProgress({ id: episodeId }).then(
-            (it: Progress) => it?.percent
+            (it: Progress) => resetCompletedProgress(it)?.percent
           ),
           HttpClient.getNextEpisode({ episodeId: episodeId })
             .then((it: EpisodeInfo) => it.id)
@@ -150,7 +151,7 @@ export function EpisodeHlsPlayer() {
                   string | undefined
                 ] = await Promise.all([
                   HttpClient.getUserProgress({ id: prev.id }).then(
-                    (it: Progress) => it?.percent
+                    (it: Progress) => resetCompletedProgress(it)?.percent
                   ),
                   HttpClient.getPreviousEpisode({ episodeId: prev.id }).then(
                     (it: EpisodeInfo) => it.id
