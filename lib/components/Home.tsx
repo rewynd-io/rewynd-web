@@ -30,18 +30,28 @@ export function Home() {
 
   useEffect(() => {
     HttpClient.listLibraries().then((it) => setLibraries(it));
-    HttpClient.listLatestUserProgress().then((it) =>
-      Promise.all(
-        it.map(async (prog) => {
-          try {
-            const res = await HttpClient.getEpisode({ episodeId: prog.id });
-            return { progress: prog, episode: res };
-          } catch (e) {
-            log.error("Failed to load episode", e);
-            return undefined;
-          }
-        })
-      ).then((it) =>
+    HttpClient.listProgress({
+      listProgressRequest: {
+        minPercent: 0.05,
+        maxPercent: 0.95,
+        limit: 20,
+      },
+    })
+      .then((it) => {
+        const results = it.results;
+        return Promise.all(
+          results?.map(async (prog) => {
+            try {
+              const res = await HttpClient.getEpisode({ episodeId: prog.id });
+              return { progress: prog, episode: res };
+            } catch (e) {
+              log.error("Failed to load episode", e);
+              return undefined;
+            }
+          }) ?? []
+        );
+      })
+      .then((it) =>
         setEpisodes(
           List(it)
             .filter(isNotNil)
@@ -49,8 +59,7 @@ export function Home() {
             .reverse()
             .toArray()
         )
-      )
-    );
+      );
   }, []);
 
   const libEntries = libraries.map((lib) => {
